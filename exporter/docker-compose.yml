@@ -1,0 +1,28 @@
+# Mornitoring - Redis, MySQL metric 수집을 위한 exporter 설정
+version: '3.9'
+services: 
+  mysql-exporter:
+    container_name: mysql-exporter
+    image: prom/mysqld-exporter
+    ports:
+      - 9104:9104
+    environment:
+      - DATA_SOURCE_NAME=abcd:1234@tcp(localhost:3306)/
+    depends_on:
+      - mysql
+    volumes:
+      - /home/user/user_my.cnf:/.my.cnf
+    networks:
+      - coupon-net
+
+  # redis-exporter:
+  #   container_name: redis-exporter
+  #   image: oliver006/redis_exporter
+  #   ports:
+  #     - 9121:9121
+  #   environment:
+  #     - REDIS_ADDR=redis://localhost:6379
+  #   depends_on:
+  #     - redis
+      # networks:
+      # - coupon-net
