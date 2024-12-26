@@ -1,0 +1,192 @@
+groups:
+  # 1. 서비스 상태 확인 그룹
+  - name: service-status
+    rules:
+      # MySQL Exporter Service Down
+      - alert: MySQLExporterDown
+        expr: up{job="mysql", instance="mysqld-exporter:9104"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MySQL Exporter is Down"
+          description: "The MySQL Exporter service on mysqld-exporter:9104 is not responding."
+
+      # Coupon Consumer Service Down
+      - alert: CouponConsumerDown
+        expr: up{job="coupon-APP", instance="coupon-consumer:9100"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Coupon Consumer is Down"
+          description: "The Coupon Consumer service on coupon-consumer:9100 is not responding."
+
+      # Coupon API Service Down
+      - alert: CouponAPIDown
+        expr: up{job="coupon-APP", instance="coupon-api:9100"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Coupon API is Down"
+          description: "The Coupon API service on coupon-api:9100 is not responding."
+
+      # Kakao Backend Service Down
+      - alert: KakaoBackendDown
+        expr: up{job="shop-APP", instance="kakao-be:9100"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kakao Backend is Down"
+          description: "The Kakao Backend service on kakao-be:9100 is not responding."
+
+      # Kakao Frontend Service Down
+      - alert: KakaoFrontendDown
+        expr: up{job="shop-APP", instance="kakao-fe:9113"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kakao Frontend is Down"
+          description: "The Kakao Frontend service on kakao-fe:9113 is not responding."
+
+      # Redis Exporter Service Down
+      - alert: RedisExporterDown
+        expr: up{job="redis", instance="redis-exporter:9121"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis Exporter is Down"
+          description: "The Redis Exporter service on redis-exporter:9121 is not responding."
+
+  # 2. MySQL 상태 확인 그룹
+  - name: mysql-alerts
+    rules:
+      # 연결 수 초과 경고
+      - alert: HighMySQLConnections
+        expr: mysql_global_status_threads_connected > 100
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High MySQL Connection Count"
+          description: "MySQL connection count is above 100 for {{ $labels.instance }}."
+
+      # 슬로우 쿼리 증가 경고
+      - alert: HighMySQLSlowQueries
+        expr: rate(mysql_global_status_slow_queries[1m]) > 10
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High MySQL Slow Queries"
+          description: "MySQL is processing more than 10 slow queries per second for {{ $labels.instance }}."
+
+      # 쿼리 처리량 (QPS) 초과 경고
+      - alert: HighMySQLQPS
+        expr: rate(mysql_global_status_queries[1m]) > 1000
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High MySQL QPS"
+          description: "MySQL query throughput is above 1000 QPS for {{ $labels.instance }}."
+
+      # MySQL CPU 사용률 초과 경고
+      - alert: HighMySQLCPUUsage
+        expr: rate(process_cpu_seconds_total{job="mysql", instance="mysqld-exporter:9104"}[1m]) * 100 > 70
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High MySQL CPU Usage"
+          description: "MySQL CPU usage is above 70% for {{ $labels.instance }}."
+
+  - name: redis-alerts
+    rules:
+      # Redis 연결 수 초과 경고
+      - alert: HighRedisConnections
+        expr: redis_connected_clients > 1000
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Redis Connections"
+          description: "Redis connection count is above 1000 for {{ $labels.instance }}."
+
+      # Redis CPU 사용률 초과 경고
+      - alert: HighRedisCPUUsage
+        expr: rate(process_cpu_seconds_total{job="redis"}[1m]) * 100 > 80
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High Redis CPU Usage"
+          description: "Redis CPU usage is above 80% for {{ $labels.instance }}."
+
+      # Redis QPS 초과 경고
+      - alert: HighRedisQPS
+        expr: rate(redis_commands_processed_total[1m]) > 5000
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Redis QPS"
+          description: "Redis query throughput (QPS) is above 5000 for {{ $labels.instance }}."
+
+      # Redis 슬로우 쿼리 (Latency) 경고
+      - alert: HighRedisLatency
+        expr: (sum(redis_slowlog_length) / sum(redis_commands_processed_total)) > 0.1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Redis Latency"
+          description: "Redis slow query latency is above 10% for {{ $labels.instance }}."
+
+
+  - name: APP-server-alerts
+    rules:
+      # 2. CPU 사용률 초과 경고
+      - alert: HighCPUUsage
+        expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[1m])) by (instance) * 100) > 10
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High CPU Usage on {{ $labels.instance }}"
+          description: "CPU usage is above 70% on {{ $labels.instance }}."
+
+      # 3. HTTP 5xx 에러율 경고
+      - alert: HighErrorRate
+        expr: (sum(promhttp_metric_handler_requests_total{code=~"5.."}) by (instance) /
+          sum(promhttp_metric_handler_requests_total) by (instance)) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High Error Rate on {{ $labels.instance }}"
+          description: "HTTP 5xx error rate is above 5% on {{ $labels.instance }}."
+
+      # 4. 동시 연결 수 경고
+      - alert: HighEstablishedConnections
+        expr: node_netstat_Tcp_CurrEstab > 1000
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High TCP Connections on {{ $labels.instance }}"
+          description: "TCP established connections exceed 1000 on {{ $labels.instance }}."
+
+      # 5. 네트워크 트래픽 이상 경고
+      - alert: HighNetworkTraffic
+        expr: rate(node_network_receive_bytes_total[1m]) + rate(node_network_transmit_bytes_total[1m]) > 1e6
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Network Traffic on {{ $labels.instance }}"
+          description: "Network traffic is above 1Gbps on {{ $labels.instance }}.1e9 "

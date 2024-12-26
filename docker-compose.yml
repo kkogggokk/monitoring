@@ -13,6 +13,8 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
     restart: always
+    environment:
+      - TZ=Asia/Seoul
 
   grafana:
     image: grafana/grafana
@@ -24,8 +26,27 @@ services:
     volumes:
       - ./grafana/volume:/var/lib/grafana
     restart: always
+    environment:
+      - TZ=Asia/Seoul
+
+  alertmanager:
+    image: prom/alertmanager
+    container_name: alertmanager
+    networks:
+      - coupon-network
+    volumes:
+      - ./alertmanager/config:/etc/alertmanager
+    ports:
+      - 9093:9093
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+    restart: always
+    environment:
+      - TZ=Asia/Seoul
 
 networks:
   coupon-network:
     name: coupon-network
     external: true  # 기존 네트워크 사용, 별도 host.docker.internal 접근 제거
+
+

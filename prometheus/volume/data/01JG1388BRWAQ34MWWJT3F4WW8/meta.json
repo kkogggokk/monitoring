@@ -1,0 +1,17 @@
+{
+	"ulid": "01JG1388BRWAQ34MWWJT3F4WW8",
+	"minTime": 1735192800000,
+	"maxTime": 1735200000000,
+	"stats": {
+		"numSamples": 5281917,
+		"numSeries": 5806,
+		"numChunks": 48797
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01JG1388BRWAQ34MWWJT3F4WW8"
+		]
+	},
+	"version": 1
+}

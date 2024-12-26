@@ -1,0 +1,12 @@
+global:
+  resolve_timeout: 5m
+  slack_api_url: 'https://hooks.slack.com/services/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'
+
+route:
+  receiver: 'slack-notifications'
+
+receivers:
+  - name: 'slack-notifications'
+    slack_configs:
+      - channel: '#coupon-alert'
+        send_resolved: true
